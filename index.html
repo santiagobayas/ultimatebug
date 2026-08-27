@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyQuest: La Aventura del Código</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Fira+Code:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="game-wrapper">
+        <!-- Barra de Estado Superior -->
+        <header id="hud">
+            <div class="hud-player-tag">
+                <span id="hud-player-avatar">🤖</span>
+                <span id="hud-player-name">PyBot</span>
+            </div>
+            <div class="hud-item"><span class="icon">❤️</span> <span id="lives-display">3</span></div>
+            <div class="hud-item"><span class="icon">🪙</span> <span id="coins-display">0</span></div>
+            <div class="hud-item"><span class="icon">⭐</span> <span id="score-display">0</span></div>
+            <div class="hud-item level-name"><span id="level-title">Nivel 1</span></div>
+            <div id="speedrun-timer" class="hud-item speedrun-box hidden"><span class="icon">⏱️</span> <span id="timer-display">00:00.0</span></div>
+            <div class="hud-controls">
+                <button id="pydex-btn" class="arcade-btn-mini pydex-top-btn" title="PyDex: Glosario de Python">📖 PyDex</button>
+                <button id="menu-btn" class="arcade-btn-mini" title="Volver al Menú Principal">🏠 MENÚ</button>
+                <button id="sound-btn" class="arcade-btn-mini" title="Sonido">🔊</button>
+            </div>
+        </header>
+
+        <!-- Canvas del Juego -->
+        <div id="canvas-container">
+            <canvas id="gameCanvas" width="960" height="540"></canvas>
+            
+            <!-- Barra de vida del Jefe Final -->
+            <div id="boss-hud" class="hidden">
+                <div class="boss-title-bar">
+                    <span id="boss-name-label">👾 JEFE</span>
+                    <span id="boss-hp-text">100%</span>
+                </div>
+                <div class="boss-hp-track">
+                    <div id="boss-hp-fill" style="width: 100%;"></div>
+                </div>
+            </div>
+
+            <!-- Mensaje flotante de interacción -->
+            <div id="interaction-prompt" class="hidden">
+                <span>Presiona <b>[E]</b> para interactuar</span>
+            </div>
+
+            <!-- Controles Táctiles Virtuales Flotantes (Modo Móvil / Vertical) -->
+            <div id="virtual-controls" class="hidden">
+                <div class="dpad-container">
+                    <button id="btn-touch-left" class="touch-btn">◀</button>
+                    <button id="btn-touch-right" class="touch-btn">▶</button>
+                </div>
+                <div class="action-touch-container">
+                    <button id="btn-touch-interact" class="touch-btn touch-interact">E</button>
+                    <button id="btn-touch-jump" class="touch-btn touch-jump">▲</button>
+                </div>
+            </div>
+
+            <!-- Pantalla de Inicio / Personalización -->
+            <div id="overlay-screen" class="overlay">
+                <div class="modal-box text-center start-card">
+                    <h1 id="screen-title" class="pixel-title">PYQUEST</h1>
+                    <p id="screen-subtitle" class="pixel-subtitle">Aventura de Algoritmos & Python</p>
+                    
+                    <div id="screen-content" class="screen-body">
+                        <!-- Selector de Perfil -->
+                        <div class="customizer-section">
+                            <label class="custom-label">👤 Tu Nombre de Programador/a:</label>
+                            <input type="text" id="player-name-input" class="arcade-input" placeholder="Escribe tu nombre..." maxlength="12" value="Nombre">
+
+                            <label class="custom-label" style="margin-top: 14px;">🎨 Elige tu Color:</label>
+                            <div class="color-picker-grid">
+                                <button type="button" class="color-btn selected" data-color="#3776ab" style="background:#3776ab;" title="Azul Python"></button>
+                                <button type="button" class="color-btn" data-color="#2ed573" style="background:#2ed573;" title="Verde Terminal"></button>
+                                <button type="button" class="color-btn" data-color="#ff4757" style="background:#ff4757;" title="Rojo Rubí"></button>
+                                <button type="button" class="color-btn" data-color="#e056fd" style="background:#e056fd;" title="Púrpura Cyber"></button>
+                                <button type="button" class="color-btn" data-color="#ff9f43" style="background:#ff9f43;" title="Naranja Fuego"></button>
+                                <button type="button" class="color-btn" data-color="#00d2d3" style="background:#00d2d3;" title="Cian Neón"></button>
+                            </div>
+
+                            <!-- Modos Especiales (Speedrun y Botones Táctiles / Modo Móvil) -->
+                            <div class="game-modes-toggles">
+                                <label class="toggle-option">
+                                    <input type="checkbox" id="speedrun-toggle">
+                                    <span>⏱️ Modo Speedrun (Cronómetro)</span>
+                                </label>
+                                <label class="toggle-option">
+                                    <input type="checkbox" id="touch-controls-toggle">
+                                    <span>📱 Botones Virtuales (Modo Móvil / Vertical)</span>
+                                </label>
+                            </div>
+
+                            <div class="character-preview-box" style="margin-top: 10px;">
+                                <div id="preview-avatar">🤖</div>
+                                <span id="preview-tag">Listo para jugar</span>
+                            </div>
+                        </div>
+
+                        <div class="controls-hint">
+                            <span>🎮 <b>Moverse:</b> [A][D] o Flechas | <b>Saltar:</b> [Espacio] | <b>Interactuar:</b> [E]</span>
+                        </div>
+                    </div>
+
+                    <div class="menu-action-buttons">
+                        <button id="start-btn" class="arcade-btn">▶ COMENZAR</button>
+                        <button id="shop-btn" class="arcade-btn-shop" title="Tienda de Skins">🛍️ SKINS</button>
+                        <button id="menu-pydex-btn" class="arcade-btn-pydex" title="Glosario PyDex">📖 PyDex</button>
+                        <button id="cheats-btn" class="arcade-btn-cheat" title="Consola de Trucos">💻 TRUCOS</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Tienda de Skins (Comprar trajes con Monedas del juego) -->
+            <div id="shop-modal" class="overlay hidden">
+                <div class="modal-box terminal-window shop-window">
+                    <div class="terminal-header">
+                        <div class="dots-container">
+                            <span class="terminal-dot red"></span>
+                            <span class="terminal-dot yellow"></span>
+                            <span class="terminal-dot green"></span>
+                        </div>
+                        <span>🛍️ TIENDA DE SKINS DE CÓDIGO</span>
+                        <button id="close-shop-btn" class="close-btn">&times;</button>
+                    </div>
+                    <div class="terminal-body shop-body">
+                        <div class="shop-balance-bar">
+                            <span>Tus Monedas: <b id="shop-coin-balance" style="color:#ffd438;">0 🪙</b></span>
+                        </div>
+                        <div id="shop-items-grid" class="shop-grid">
+                            <!-- Items de skins generados dinámicamente -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal PyDex (Glosario Interactivo de Python y Algoritmos) -->
+            <div id="pydex-modal" class="overlay hidden">
+                <div class="modal-box terminal-window pydex-window">
+                    <div class="terminal-header">
+                        <div class="dots-container">
+                            <span class="terminal-dot red"></span>
+                            <span class="terminal-dot yellow"></span>
+                            <span class="terminal-dot green"></span>
+                        </div>
+                        <span>📖 PyDex: Guía & Glosario de Python</span>
+                        <button id="close-pydex-btn" class="close-btn">&times;</button>
+                    </div>
+                    <div class="terminal-body pydex-body">
+                        <div class="pydex-tabs">
+                            <button type="button" class="pydex-tab active" data-tab="algoritmos">Algoritmos</button>
+                            <button type="button" class="pydex-tab" data-tab="variables">Variables & Print</button>
+                            <button type="button" class="pydex-tab" data-tab="condicionales">If / Else</button>
+                            <button type="button" class="pydex-tab" data-tab="listas">Listas []</button>
+                            <button type="button" class="pydex-tab" data-tab="bucles">Bucles & Funciones</button>
+                        </div>
+                        <div id="pydex-tab-content" class="pydex-content-card">
+                            <!-- Contenido dinámico -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Consola de Trucos / Comandos -->
+            <div id="cheats-modal" class="overlay hidden">
+                <div class="modal-box terminal-window cheat-window">
+                    <div class="terminal-header">
+                        <div class="dots-container">
+                            <span class="terminal-dot red"></span>
+                            <span class="terminal-dot yellow"></span>
+                            <span class="terminal-dot green"></span>
+                        </div>
+                        <span>TERMINAL DE CÓDIGOS SECRETOS</span>
+                        <button id="close-cheats-btn" class="close-btn">&times;</button>
+                    </div>
+                    <div class="terminal-body">
+                        <p style="color: #ffd438; font-size: 11.5px; margin-bottom: 12px;">🔑 Ingresa un <b>código secreto</b> desbloqueado al ganar el juego o un comando de nivel:</p>
+
+                        <!-- Línea de comando interactiva -->
+                        <div class="cheat-input-row">
+                            <span class="cheat-prompt">&gt;</span>
+                            <input type="text" id="cheat-command-input" class="cheat-input" placeholder="Escribe el código secreto aquí..." autocomplete="off">
+                            <button id="run-cheat-btn" class="arcade-btn-mini">ACTIVAR</button>
+                        </div>
+
+                        <div id="cheat-output" class="cheat-log">Esperando código... Gana partidas para descubrir trucos ocultos.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal de Desafíos / Terminales / Puertas -->
+            <div id="challenge-modal" class="overlay hidden">
+                <div class="modal-box terminal-window">
+                    <div class="terminal-header">
+                        <div class="dots-container">
+                            <span class="terminal-dot red"></span>
+                            <span class="terminal-dot yellow"></span>
+                            <span class="terminal-dot green"></span>
+                        </div>
+                        <span id="challenge-header-title">DESAFÍO PYTHON</span>
+                        <button id="close-modal-btn" class="close-btn">&times;</button>
+                    </div>
+                    <div class="terminal-body">
+                        <div class="challenge-category" id="challenge-type-badge">DESAFÍO</div>
+                        <h3 id="challenge-title">Pregunta</h3>
+                        <p id="challenge-desc">Descripción del desafío</p>
+                        
+                        <!-- Contenedor dinámico según el tipo de minijuego -->
+                        <div id="challenge-content-area"></div>
+
+                        <!-- Sección de Pistas -->
+                        <div id="hint-section" class="hint-container">
+                            <button id="hint-btn" class="hint-btn">💡 Pedir Pista (-10 pts)</button>
+                            <div id="hint-text" class="hint-box hidden"></div>
+                        </div>
+
+                        <!-- Feedback de respuesta -->
+                        <div id="challenge-feedback" class="feedback-msg hidden"></div>
+
+                        <!-- Acciones -->
+                        <div class="terminal-footer">
+                            <button id="submit-challenge-btn" class="arcade-btn submit-btn">COMPROBAR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer id="footer-info">
+            <span>💡 <b>Tip:</b> Consulta la <b>📖 PyDex</b> en cualquier momento para repasar la teoría.</span>
+            <span>Usa <b>[R]</b> para reiniciar si te caes.</span>
+        </footer>
+    </div>
+
+    <!-- Scripts del juego -->
+    <script src="audio.js"></script>
+    <script src="questions.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
